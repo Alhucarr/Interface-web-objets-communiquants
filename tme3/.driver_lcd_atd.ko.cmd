@@ -1,0 +1,1 @@
+cmd_/users/enseig/tugaye/Documents/IOC/tme3/driver_lcd_atd.ko := /users/enseig/franck/IOC/arm-bcm2708hardfp-linux-gnueabi/bin/bcm2708hardfp-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /users/enseig/tugaye/Documents/IOC/tme3/driver_lcd_atd.ko /users/enseig/tugaye/Documents/IOC/tme3/driver_lcd_atd.o /users/enseig/tugaye/Documents/IOC/tme3/driver_lcd_atd.mod.o
