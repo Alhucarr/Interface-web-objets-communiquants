@@ -1,7 +1,7 @@
 ﻿# Compte-rendu TP3
-### Samy Attal - Théo Tugaye - Hugo Dufeutrelle
+## Samy Attal - Théo Tugaye - Hugo Dufeutrelle
 ----
-#### Question LCD_user.c
+### Question LCD_user.c
 
 1) Le mot clé "volatile" permet de dire au compilateur de ne rien optimiser concernant cette variable.
 En effet, cette variable n'est pas seulement modifiée par le processeur mais aussi par des entrées/sorties, il faut donc empêcher le compilateur d'exécuter des commandes dans le désordre pour optimiser l'exécution, étant donnée que la valeur contenue dans cette variable peut changer sans avertir le compilateur.
@@ -25,5 +25,18 @@ Ces flags garantissent une exécution avec des données proprement actualisées.
 Dans un premier temps nous avons du mettre en place une fonction pour déplacer le curseur à la position souhaitée. Après plusieurs essais nous avons décidé de nous aider du tableau pour gérer le changement de ligne en écrivant directement la position avec la commande "lcd_command(LCD_SETDDRAMADDR + a[x] + y" (avec x la ligne et y la colonnne).
 Le problème que nous avons ensuite rencontré à été de devoir gérer l'écriture  à la nouvelle position du curseur. Nous avons créé des variables globales pour garder les coordonnées de la nouvelle position ainsi que savoir combien de caractères restait-il avant la fin de la ligne.
 Nous avons ensuite du prendre en charge le changement de ligne pendant l'écriture du message, pour ce faire nous avons utilisé un compteur pour déterminer l'avancement de l'écriture au cours de la ligne.
+Ces changements ont permis d'éviter des problèmes qui apparaissent quand la ligne écrite est trop longue
 
 Pour écrire sur les 4 lignes on ce contente de reprendre la mécanique du tableau avec les décalages mémoire pour les lignes, auquel on ajoute un décalage après l'écriture de chaque caractères.
+
+### Partie Driver
+
+Durant le chargement du driver, nous avons eu un problème (dont nous n'avons plus le souvenir) qui nous a poussé à faire Ctrl + C. Nous étions ensuite bloqué car le driver était impossible à retirer, mais continuait d'être considéré comme chargé, alors qu'aucun résultat n'était visible sur l'écran. Nous avons du précautionneusement reboot la raspberry (en ayant vérifié au préalable que personne ne travaillait dessus). Nous en avons aussi profité pour débrancher la carte SD quelques secondes au cas où, sans savoir vraiment si celà avait un effet.
+
+Ensuite nous avons rencontré un autre problème, concernant l'écriture, car non seulement nous avions un espace en trop, mais également un caractère aléatoire en plus. 
+
+Pour régler le second problème, nous avons du remplacer la taille du copy from user sur file->private_data, qui était de count+1, par count.
+
+Pour le premier problème, nous avons du ajouter un 0 à fin du message, car le \0 de fin de message n'était pas mis automatiquement. Pour cela nous avons créé une chaine de caractère qui prends la valeur de file->private_data puis on lui ajoute 0 à [count-1].
+
+Enfin nous avons également du ajouter le lcd_set_cursor(0,0) du au fonctionnement particulier de notre fonction lcd_message modifiée.
