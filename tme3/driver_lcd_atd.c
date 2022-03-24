@@ -160,7 +160,6 @@ void lcd_data(int character)
     gpio_write(RS, 1);
     lcd_write4bits(character);
     udelay(1000);
-    printk(KERN_DEBUG "[ATD] Char : %c \n", character);
 }
 
 void lcd_init(void)
@@ -171,6 +170,15 @@ void lcd_init(void)
     lcd_command(LCD_FUNCTIONSET | LCD_FS_4BITMODE | LCD_FS_2LINE | LCD_FS_5x8DOTS);
     lcd_command(LCD_DISPLAYCONTROL | LCD_DC_DISPLAYON | LCD_DC_CURSOROFF);
     lcd_command(LCD_ENTRYMODESET | LCD_EM_RIGHT | LCD_EM_DISPLAYNOSHIFT);
+
+    /* Setting up GPIOs to output */
+    gpio_config(RS, GPIO_OUTPUT);
+    gpio_config(E,  GPIO_OUTPUT);
+    gpio_config(D4, GPIO_OUTPUT);
+    gpio_config(D5, GPIO_OUTPUT);
+    gpio_config(D6, GPIO_OUTPUT);
+    gpio_config(D7, GPIO_OUTPUT);
+
 }
 
 void lcd_clear(void)
@@ -188,7 +196,6 @@ void lcd_message(const char *txt)
     for (i = 0,l=0; (l<4) && (i<strlen(txt)); l++){
             lcd_command(LCD_SETDDRAMADDR + a[ligne_actuelle]);	
         for (; (i < (l + 1) * len) && (i < strlen(txt)); i++) {
-            printk(KERN_DEBUG "[ATD] Texte : %c \n", txt[i]);
             lcd_data(txt[i]);
             cpt++;
             if((cpt == (len-1)) && (cpt < strlen(txt))){
@@ -228,15 +235,8 @@ static int
 open_lcd_ATD(struct inode *inode, struct file *file) {
     printk(KERN_DEBUG "open() ATD\n");
 
-    /* Setting up GPIOs to output */
-    gpio_config(RS, GPIO_OUTPUT);
-    gpio_config(E,  GPIO_OUTPUT);
-    gpio_config(D4, GPIO_OUTPUT);
-    gpio_config(D5, GPIO_OUTPUT);
-    gpio_config(D6, GPIO_OUTPUT);
-    gpio_config(D7, GPIO_OUTPUT);
-
     file->private_data = kmalloc(500, GFP_KERNEL);
+
     return 0;
 }
 
@@ -248,9 +248,11 @@ read_lcd_ATD(struct file *file, char *buf, size_t count, loff_t *ppos) {
 
 static ssize_t 
 write_lcd_ATD(struct file *file, const char *buf, size_t count, loff_t *ppos) {
-    copy_from_user(file->private_data, buf, count+1);
+    copy_from_user(file->private_data, buf, count);
+    char* chaine=file->private_data;
+    chaine[count-1]=0;
     lcd_set_cursor(0,0);
-    lcd_message(file->private_data);
+    lcd_message(chaine);
     printk(KERN_DEBUG "write() ATD\n");
     return count;
 }
