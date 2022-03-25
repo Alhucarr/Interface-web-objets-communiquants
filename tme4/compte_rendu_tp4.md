@@ -38,4 +38,92 @@
 
 ### 1. Dans le texte précédent, quel est le nom de la boîte à lettre et comment est-elle initialisée ? 
 
-    La boite à lettre s'appelle mb0 et initialisée à EMTPY.
+* La boite à lettre s'appelle mb0 et initialisée à EMTPY.
+
+* On a la structure de la tache Lum qui est definie par : 
+```arduino
+struct Lum {
+  int timer;            // le numéro de timer
+  unsigned long period; // le temps de scrutation / polling
+  int pin;              // la broche du capteur de luminosité
+};
+```
+
+sa fonction setup: 
+```arduino
+void setup_lum(struct Lum* lum, int pin, int timer, unsigned long period){
+  lum->pin = pin;
+  lum->timer = timer;
+  lum->period = period;
+  pinMode(pin, INPUT);
+}
+```
+
+ainsi que sa fonction loop: 
+
+```arduino
+void loop_lum(struct Lum* lum, struct mailbox_s * mb, struct mailbox_s * mb1) {
+  if (!(waitFor(lum->timer,lum->period))) return;
+  if (mb->state != EMPTY) return; // attend que la mailbox soit vide
+  mb->val = analogRead(lum->pin);
+  mb->state = FULL;
+  mb1->val = mb->val;
+  mb1->state = FULL;
+}
+```
+* On ajoute une mailbox afin que le capteur de luminosité puisse controler également la fréquence de clignotement de la led. 
+
+```arduino
+void loop_Led( struct Led_s * ctx, struct mailbox_s* mb) {
+  
+    if(waitFor(ctx->timer, ctx->period)) {
+        digitalWrite(ctx->pin,ctx->etat);                       // ecriture
+        ctx->etat = 1 - ctx->etat;                              // changement d'état
+    }
+
+    if(mb->state == FULL) {
+        ctx->period = map(mb->val, 0, 4095, 100000, 1000000);
+        mb->state = EMPTY;
+    }
+
+}
+```
+On map de la valeur de 0 à 4095 car la valeur maximale en sortie du capteur est cette derniere.
+
+
+## Gestion des interruptions 
+
+On écrit la fonction `serialEvent()` qui va être appelée dans le `void loop()`.
+
+Nous avons decidé aussi de permettre de commander le démarrage du clinotement (avec "s") et son arrêt (avec "r").
+```arduino
+void serialEvent() {  
+  char c;
+  if ((c = Serial.read()) == -1) return;
+  if (mb_serial.state != EMPTY) return; // attend que la mailbox soit vide
+  if (c == 's') { 
+    mb_serial.val = 1;
+    Serial.println("lecture de s");
+  }
+  else if (c == 'r') {
+    mb_serial.val = 0;
+    Serial.println("lecture de r");
+  }
+  mb_serial.state = FULL;
+}
+```
+
+Nous avons découvert que l'appel automatique de la fonction `serialEvent()` n'était pas implémenté sur la ESP32, on a donc ajouter à la fin de la fonction `loop()`.
+
+```arduino
+void loop()
+  loop_serie(&mb0);                 // affichage sur le port série 
+  loop_lum(&lum, &mb0, &mb1);       // capteur de luminosité
+  loop_Led(&led, &mb1, &mb_serial); // gestion du clignotement de la led
+  loop_oled(&oled);                 // gestion de l'écran OLED
+
+  if (Serial.available())
+    serialEvent();
+```
+
+On appelle `serialEvent()` que s'il y a des données disponibles.
