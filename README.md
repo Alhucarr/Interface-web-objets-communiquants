@@ -1,5 +1,5 @@
 # IOC - SESI - 2022
-![forthebadge](https://forthebadge.com/images/badges/made-with-c++.svg) ![forthebadge](https://forthebadge.com/images/badges/powered-by-coffee.svg) ![badge](https://svgshare.com/i/dFo.svg)
+![forthebadge](https://forthebadge.com/images/badges/made-with-cpp.svg) ![forthebadge](https://forthebadge.com/images/badges/powered-by-coffee.svg) ![badge](https://svgshare.com/i/dFo.svg)
 ***
 
 ## Description
