@@ -20,10 +20,11 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define LOGO_HEIGHT   16
 #define LOGO_WIDTH    16
 
-#define INT_PIN 2
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                 Intertache                                                  //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define MAX_WAIT_FOR_TIMER 2
-
 
 unsigned int waitFor(int timer, unsigned long period){
   static unsigned long waitForTimer[MAX_WAIT_FOR_TIMER];  // il y a autant de timers que de tâches périodiques
@@ -33,7 +34,6 @@ unsigned int waitFor(int timer, unsigned long period){
   if ( delta ) waitForTimer[timer] = newTime;             // enregistrement du nouveau numéro de période
   return delta;
 }
-
 
 #define LUM_PIN 36
 
@@ -46,8 +46,6 @@ struct mailbox_s {
 
 struct mailbox_s mb0 = {.state = EMPTY};
 struct mailbox_s mb1 = {.state = EMPTY};
-struct mailbox_s mb_serial = {.state = EMPTY};
-
 
 
 struct Lum {
@@ -80,7 +78,7 @@ void setup_serie() {
 void loop_serie(struct mailbox_s* mb){
   int a;
   if (mb->state != FULL) return; // attend que la mailbox soit pleine
-  //Serial.print("luminisosite : ");
+  Serial.print("luminisosite : ");
   a = map(mb->val, 0, 4095, 100, 0);
   //Serial.print(a);
   //Serial.println("%");
@@ -92,7 +90,6 @@ struct Led_s {
   unsigned long period;                                   // periode de clignotement
   int pin;                                                // numéro de la broche sur laquelle est la LED
   int etat;                                               // etat interne de la led
-  int disable;
 }; 
 
 void setup_Led( struct Led_s * ctx, int timer, unsigned long period, byte pin) {
@@ -104,7 +101,7 @@ void setup_Led( struct Led_s * ctx, int timer, unsigned long period, byte pin) {
   digitalWrite(pin, ctx->etat);
 }
 
-void loop_Led( struct Led_s * ctx, struct mailbox_s* mb, struct mailbox_s* mb_serial) {
+void loop_Led( struct Led_s * ctx, struct mailbox_s* mb) {
   /*if (!waitFor(ctx->timer, ctx->period)) return;          // sort s'il y a moins d'une période écoulée
   digitalWrite(ctx->pin,ctx->etat);                       // ecriture
   ctx->etat = 1 - ctx->etat;                              // changement d'état
@@ -113,47 +110,25 @@ void loop_Led( struct Led_s * ctx, struct mailbox_s* mb, struct mailbox_s* mb_se
   Serial.print("debug : ");
   Serial.println(ctx->period);
   mb->state = EMPTY;*/
-  if(mb_serial->state == FULL) {
-    ctx->disable = mb_serial->val;
-    mb_serial->state = EMPTY;
+
+  if(waitFor(ctx->timer, ctx->period)) {
+      digitalWrite(ctx->pin,ctx->etat);                       // ecriture
+      ctx->etat = 1 - ctx->etat;                              // changement d'état
   }
 
-  if(!(ctx->disable)) {
-    if(waitFor(ctx->timer, ctx->period)) {
-        digitalWrite(ctx->pin,ctx->etat);                       // ecriture
-        ctx->etat = 1 - ctx->etat;                              // changement d'état
-    }
-  
-    if(mb->state == FULL) {
-      ctx->period = map(mb->val, 0, 4095, 100000, 1000000);
-      //Serial.print("debug : ");
-      //Serial.println(ctx->period);
-      mb->state = EMPTY;
-    }
+  if(mb->state == FULL) {
+    ctx->period = map(mb->val, 0, 4095, 100000, 1000000);
+    Serial.print("debug : ");
+    Serial.println(ctx->period);
+    mb->state = EMPTY;
   }
 }
 
-void serialEvent() {  
-  //Serial.println("appel serial evnt");
-
-  char c;
-  if ((c = Serial.read()) == -1) return;
-  if (mb_serial.state != EMPTY) return; // attend que la mailbox soit vide
-  if (c == 's') { 
-    mb_serial.val = 1;
-    Serial.println("lecture de s");
-    
-  }
-  else if (c == 'r') {
-    mb_serial.val = 0;
-    Serial.println("lecture de r");
-    
-  }
-  mb_serial.state = FULL;
-}
 
 struct Lum lum;
 struct Led_s led;
+
+//Fin Intertache
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                               OLED                                                          //
@@ -187,7 +162,7 @@ void setup_oled(struct oled* ctx, int timer, unsigned long period){
   ctx->timer = timer;
   ctx->period = period;
   
-  display.setTextSize(1);             // Draw 2X-scale text
+  display.setTextSize(2);             // Draw 2X-scale text
   display.setTextColor(SSD1306_WHITE);
 
 }
@@ -199,10 +174,8 @@ void loop_oled(struct oled* ctx){
   // Clear the buffer
   display.clearDisplay();
 
-  display.setCursor(25,10); // On remet en haut à gauche
-  display.print(F("Compteur : "));
+  display.setCursor(0,0); // On remet en haut à gauche
   display.print(ctx->cpt); //Affichage du compteur
-  display.print(F("s"));
 
   //Update screen
   display.display();
@@ -216,15 +189,12 @@ void setup() {
   setup_oled(&oled, 1, 1000000);
   setup_lum(&lum, LUM_PIN, 0, 500000);
   setup_serie();
-  setup_Led(&led, 0, 10000, LED_BUILTIN);
+  setup_Led(&led, 0, 100000, LED_BUILTIN);
 }
 
 void loop() {
   loop_serie(&mb0);
   loop_lum(&lum, &mb0, &mb1);
-  loop_Led(&led, &mb1, &mb_serial);
+  loop_Led(&led, &mb1);
   loop_oled(&oled);
-
-  if (Serial.available())
-    serialEvent();
 }
