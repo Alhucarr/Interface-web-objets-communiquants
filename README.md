@@ -3,7 +3,7 @@
 ***
 
 ## Description
-Ce projet encadré par Franck Wajsbürt entre dans le cadre de l'UE IOC à Sorbonne Université dans le Master SESI en première année.
+Ce projet, encadré par Franck Wajsbürt, entre dans le cadre de l'UE IOC à Sorbonne Université dans le Master SESI en première année.
 IOC signifie Interface des Objets Communicants.
 
 Le module a pour objectif d’expérimenter quelques briques technologiques utilisées par les objets communicants.
