@@ -1,4 +1,4 @@
-# IOC - SESI - 2022
+# Internet des Objets Communiquant [IOC] - SESI - 2022
 [![forthebadge](https://forthebadge.com/images/badges/made-with-c-plus-plus.svg)](https://forthebadge.com) ![forthebadge](https://forthebadge.com/images/badges/powered-by-coffee.svg) ![badge](https://svgshare.com/i/fb4.svg)
 ***
 
